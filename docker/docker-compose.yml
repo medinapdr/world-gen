@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: dev
+    ports:
+      - "${API_PORT}:8080"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - RATE_LIMIT=${RATE_LIMIT}
+      - RATE_WINDOW=${RATE_WINDOW}
+      - HISTORY_LIMIT=${HISTORY_LIMIT}
+    volumes:
+      - ../api:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health", "||", "exit 1"]
+      interval: 1s
+      timeout: 1s
+      start_period: 1s
+      retries: 1
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - worldgen-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 2
+      start_period: 2s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - worldgen-redis-data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 2
+      start_period: 2s
+
+volumes:
+  worldgen-postgres-data:
+    name: worldgen-postgres-data
+  worldgen-redis-data:
+    name: worldgen-redis-data

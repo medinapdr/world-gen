@@ -1,0 +1,246 @@
+basePath: /
+definitions:
+  models.PaginatedWorldsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.World'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  models.World:
+    properties:
+      climate:
+        type: string
+      created_at:
+        type: string
+      cultures:
+        items:
+          type: string
+        type: array
+      dangers:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      fauna:
+        items:
+          type: string
+        type: array
+      features:
+        items:
+          type: string
+        type: array
+      flora:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      languages:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      population:
+        type: integer
+      theme:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@worldgen.local
+    name: API Support
+  description: API for generating fantasy worlds
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: World Generator API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: Redirects to Swagger documentation
+      produces:
+      - text/html
+      responses:
+        "302":
+          description: Redirect to Swagger
+          schema:
+            type: string
+      summary: API home page
+  /api:
+    get:
+      description: Returns information about available API versions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: API version information
+  /v1:
+    get:
+      description: Provides information about the API v1 endpoints
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: API v1 welcome page
+      tags:
+      - API
+  /v1/history:
+    get:
+      description: Retrieves the latest generated worlds (stored in Redis)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.World'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Gets world history
+      tags:
+      - World
+  /v1/world:
+    get:
+      description: Creates a world with random characteristics based on the chosen
+        theme
+      parameters:
+      - default: fantasy
+        description: World theme
+        enum:
+        - fantasy
+        - sci-fi
+        - post-apocalyptic
+        in: query
+        name: theme
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.World'
+        "429":
+          description: Too Many Requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generates a new world
+      tags:
+      - World
+  /v1/world/{id}:
+    get:
+      description: Retrieves a world from the database by its ID
+      parameters:
+      - description: World ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.World'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Gets a specific world by ID
+      tags:
+      - World
+  /v1/worlds:
+    get:
+      description: Search for worlds based on various criteria
+      parameters:
+      - description: Search query (name/description)
+        in: query
+        name: query
+        type: string
+      - description: Filter by theme
+        in: query
+        name: theme
+        type: string
+      - description: Filter by climate
+        in: query
+        name: climate
+        type: string
+      - default: 10
+        description: Limit results
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PaginatedWorldsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Search for worlds
+      tags:
+      - World
+schemes:
+- http
+- https
+swagger: "2.0"
